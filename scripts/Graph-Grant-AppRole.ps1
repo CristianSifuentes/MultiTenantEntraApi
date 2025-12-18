@@ -10,7 +10,7 @@ High level:
   3) Assign resource appRole -> client
 
 USAGE
-  pwsh ./Graph-Grant-AppRole.ps1 -TenantId "<TENANT_B_ID>" -ResourceAppId "<API_CLIENT_ID>" -ClientAppId "<CLIENT_APP_ID>" -AppRoleValue "Reports.Read.All"
+  pwsh ./Graph-Grant-AppRole.ps1 -TenantId "068733c0-9d09-4079-aa1f-c80a67664994" -ResourceAppId "58a207b2-e309-4156-914f-87618b42c8b5" -ClientAppId "7c3f9357-5ac1-4a54-bfb9-802d8219684d" -AppRoleValue "Reports.Read.All"
 
 REQUIRES
   Microsoft.Graph modules and permissions:

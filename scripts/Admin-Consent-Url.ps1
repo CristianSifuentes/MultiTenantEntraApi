@@ -3,7 +3,7 @@
 Builds the admin consent URL for a multi-tenant app.
 
 USAGE
-  pwsh ./Admin-Consent-Url.ps1 -CustomerTenantId "<TENANT_B_ID>" -ClientId "<API_CLIENT_ID>" -RedirectUri "https://localhost:7249/auth/consent-callback"
+  pwsh ./Admin-Consent-Url.ps1 -CustomerTenantId "068733c0-9d09-4079-aa1f-c80a67664994" -ClientId "58a207b2-e309-4156-914f-87618b42c8b5" -RedirectUri "https://localhost:7249/auth/consent-callback"
 #>
 
 param(

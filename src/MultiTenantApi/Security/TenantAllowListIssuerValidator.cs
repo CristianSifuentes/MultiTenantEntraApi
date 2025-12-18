@@ -35,12 +35,46 @@ namespace MultiTenantApi.Security;
 //            if (!allowAny && !allowedSet.Contains(tid))
 //                throw new SecurityTokenInvalidIssuerException($"Tenant '{tid}' is not allowed.");
 
-//            // We accept the issuer as provided by metadata validation. Returning issuer tells the handler it's valid.
+//            // accept the issuer as provided by metadata validation.Returning issuer tells the handler it's valid.
 //            return issuer;
 //        };
 //    }
 //}
 
+
+//internal static class TenantAllowListIssuerValidator
+//{
+//    public static IssuerValidator Build(IConfiguration config)
+//    {
+//        var allowAny = config.GetValue("Tenancy:AllowAnyTenant", false);
+//        var allowed = config.GetSection("Tenancy:AllowedTenants").Get<string[]>() ?? Array.Empty<string>();
+
+//        var allowedSet = new HashSet<string>(
+//            allowed.Where(x => !string.IsNullOrWhiteSpace(x)),
+//            StringComparer.OrdinalIgnoreCase);
+
+//        return (issuer, token, parameters) =>
+//        {
+//            if (token is not JwtSecurityToken jwt)
+//                throw new SecurityTokenInvalidIssuerException("Token is not a JWT.");
+
+//            var tid = jwt.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
+//            if (string.IsNullOrWhiteSpace(tid))
+//                throw new SecurityTokenInvalidIssuerException("Missing 'tid' claim.");
+
+//            if (!allowAny && !allowedSet.Contains(tid))
+//                throw new SecurityTokenInvalidIssuerException($"Tenant '{tid}' is not allowed.");
+
+//            return issuer;
+//        };
+//    }
+//}
+
+
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
 internal static class TenantAllowListIssuerValidator
 {
@@ -55,17 +89,35 @@ internal static class TenantAllowListIssuerValidator
 
         return (issuer, token, parameters) =>
         {
-            if (token is not JwtSecurityToken jwt)
-                throw new SecurityTokenInvalidIssuerException("Token is not a JWT.");
+            // 1) Read tid from either token type (JsonWebToken is common in newer handlers)
+            var tid = TryGetTenantId(token);
 
-            var tid = jwt.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
             if (string.IsNullOrWhiteSpace(tid))
                 throw new SecurityTokenInvalidIssuerException("Missing 'tid' claim.");
 
             if (!allowAny && !allowedSet.Contains(tid))
                 throw new SecurityTokenInvalidIssuerException($"Tenant '{tid}' is not allowed.");
 
+            // 2) Safety: issuer must not be null/empty
+            if (string.IsNullOrWhiteSpace(issuer))
+                throw new SecurityTokenInvalidIssuerException("Issuer is null/empty.");
+
+            // 3) Return issuer to signal "valid"
             return issuer;
         };
+    }
+
+    private static string? TryGetTenantId(SecurityToken token)
+    {
+        // A) Newer path: JsonWebToken
+        if (token is JsonWebToken jwt2)
+            return jwt2.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
+
+        // B) Classic path: JwtSecurityToken
+        if (token is JwtSecurityToken jwt)
+            return jwt.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
+
+        // C) Unknown token type
+        return null;
     }
 }
